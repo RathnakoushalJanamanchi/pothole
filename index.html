@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RASTA - Road Assessment and Safety Technology Apparatus</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --glow-color: #0ea5e9; /* sky-500 */
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #020617; /* slate-950 */
+            color: #e2e8f0; /* slate-200 */
+        }
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.6); /* slate-900 with opacity */
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(51, 65, 85, 0.5); /* slate-700 */
+            border-radius: 1rem;
+        }
+        .futuristic-btn {
+            background: rgba(30, 41, 59, 0.8); /* slate-800 */
+            border: 1px solid #334155; /* slate-700 */
+            transition: all 0.3s ease;
+            box-shadow: 0 0 5px rgba(14, 165, 233, 0.3), inset 0 0 5px rgba(14, 165, 233, 0.2);
+        }
+        .futuristic-btn:hover {
+            background: #0ea5e9; /* sky-500 */
+            color: #f8fafc; /* slate-50 */
+            box-shadow: 0 0 15px #0ea5e9, inset 0 0 10px #0ea5e9;
+            transform: translateY(-2px);
+        }
+        .futuristic-btn.active {
+            background: #dc2626; /* red-600 */
+            box-shadow: 0 0 15px #dc2626, inset 0 0 10px #dc2626;
+        }
+        .glowing-border {
+            border: 1px solid var(--glow-color);
+            box-shadow: 0 0 10px var(--glow-color);
+        }
+        .scanline {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--glow-color), transparent);
+            animation: scan 4s linear infinite;
+            opacity: 0.7;
+            display: none; /* Initially hidden */
+        }
+        @keyframes scan {
+            0% { top: 0%; }
+            100% { top: 100%; }
+        }
+        .alert-modal-base {
+            animation: pulse-border 1.5s infinite;
+        }
+        @keyframes pulse-border {
+            0%, 100% {
+                transform: scale(1);
+                 box-shadow: 0 0 20px var(--pulse-color), 0 0 35px var(--pulse-color);
+            }
+            50% {
+                transform: scale(1.02);
+                 box-shadow: 0 0 30px var(--pulse-color), 0 0 45px var(--pulse-color);
+            }
+        }
+        .toast-notification {
+            transition: all 0.5s ease-in-out;
+            transform: translateY(200%);
+            opacity: 0;
+        }
+        .toast-notification.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-7xl mx-auto">
+        <header class="text-center mb-6">
+            <h1 class="text-3xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-purple-500">
+                RASTA
+            </h1>
+            <p class="text-slate-400 mt-2">Advanced Road Perception System</p>
+        </header>
+
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Video Feed Column -->
+            <div class="lg:col-span-2 w-full glass-panel p-4 flex flex-col items-center justify-center min-h-[300px] md:min-h-[500px]">
+                 <div id="loading-spinner" class="hidden text-center">
+                    <svg class="animate-spin h-10 w-10 text-sky-400 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="  0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <p class="mt-2 text-sky-300">Deploying Vision Model & AI Agents...</p>
+                </div>
+                <div id="video-container" class="relative w-full aspect-video rounded-lg overflow-hidden hidden glowing-border">
+                    <video id="video-feed" playsinline autoplay muted class="w-full h-full object-cover"></video>
+                    <canvas id="canvas-overlay" class="absolute top-0 left-0 w-full h-full"></canvas>
+                    <div class="scanline"></div>
+                </div>
+                 <div id="start-prompt" class="text-center">
+                    <p class="text-lg text-slate-300">System is offline. Activate to begin road scanning.</p>
+                </div>
+            </div>
+
+            <!-- Control Panel Column -->
+            <div class="w-full glass-panel p-6 flex flex-col space-y-4">
+                <div class="text-center">
+                    <button id="toggle-system-btn" class="futuristic-btn w-full py-3 px-4 rounded-lg font-bold text-slate-200">
+                        ACTIVATE SYSTEM
+                    </button>
+                </div>
+
+                <div>
+                    <h2 class="text-lg font-semibold text-cyan-400 border-b border-slate-700 pb-2 mb-3 flex items-center">
+                        <span class="mr-2">✨</span> AI Driving Assistant
+                    </h2>
+                    <div id="ai-assistant-panel" class="h-20 bg-slate-900/50 rounded-lg p-3 text-sm text-cyan-200">
+                        <p id="ai-assistant-message">Standing by for road analysis...</p>
+                    </div>
+                </div>
+
+                <div>
+                    <h2 class="text-lg font-semibold text-purple-400 border-b border-slate-700 pb-2 mb-3">System Telemetry</h2>
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div><p class="text-slate-400">FPS:</p><p id="telemetry-fps" class="font-bold text-lg text-green-400">--</p></div>
+                        <div><p class="text-slate-400">Hazard Confidence:</p><p id="telemetry-confidence" class="font-bold text-lg text-green-400">--</p></div>
+                        <div><p class="text-slate-400">System State:</p><p id="telemetry-model" class="font-bold text-lg text-green-400">INACTIVE</p></div>
+                        <div><p class="text-slate-400">Road Condition:</p><p id="telemetry-condition" class="font-bold text-lg text-green-400">--</p></div>
+                        <div class="col-span-2"><p class="text-slate-400">User ID:</p><p id="user-id-display" class="font-mono text-xs text-green-400 break-all">--</p></div>
+                    </div>
+                </div>
+
+                 <div>
+                    <h2 class="text-lg font-semibold text-yellow-400 border-b border-slate-700 pb-2 mb-3">Calibration Log</h2>
+                    <div id="feedback-log" class="h-24 bg-slate-900/50 rounded-lg p-3 text-xs font-mono overflow-y-auto">
+                        <p class="text-slate-500">Awaiting calibration data...</p>
+                    </div>
+                </div>
+
+                 <div>
+                    <h2 class="text-lg font-semibold text-sky-400 border-b border-slate-700 pb-2 mb-3">AI Agents Log</h2>
+                    <div id="ai-agent-log" class="h-24 bg-slate-900/50 rounded-lg p-3 text-sm font-mono overflow-y-auto">
+                        <p class="text-slate-400">&gt; RASTA agents standing by...</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div id="alert-modal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+        <div id="alert-modal-content" class="alert-modal-base glass-panel p-8 rounded-2xl border-2 text-center">
+            <div id="alert-icon-container" class="mx-auto mb-4 h-20 w-20"></div>
+            <h2 id="alert-title" class="text-3xl font-bold"></h2>
+            <p id="alert-subtitle" class="text-lg text-slate-200 mt-2"></p>
+        </div>
+    </div>
+    <div id="feedback-modal" class="hidden fixed bottom-4 right-4 z-40">
+         <div id="feedback-content" class="glass-panel p-4 rounded-lg shadow-2xl border border-sky-500 shadow-sky-500/20">
+            <p class="font-semibold mb-3 text-slate-200">Was this detection correct?</p>
+            <div id="feedback-buttons" class="flex space-x-3">
+                <button id="feedback-yes-btn" class="futuristic-btn flex-1 py-2 px-4 rounded-md bg-green-600/50 border-green-500 text-sm hover:bg-green-500">Yes</button>
+                <button id="feedback-no-btn" class="futuristic-btn flex-1 py-2 px-4 rounded-md bg-red-600/50 border-red-500 text-sm hover:bg-red-500">No</button>
+            </div>
+            <div id="report-buttons" class="hidden">
+                 <button id="generate-report-btn" class="futuristic-btn w-full py-2 px-4 rounded-md text-sm">📝 Generate Damage Report</button>
+            </div>
+        </div>
+    </div>
+    <div id="report-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+        <div class="glass-panel w-full max-w-2xl p-6 rounded-lg border border-sky-500">
+            <h2 class="text-2xl font-bold text-sky-400 mb-4">AI Generated Damage Report</h2>
+            <div id="report-content" class="w-full h-64 bg-slate-900/70 rounded p-3 text-sm font-mono whitespace-pre-wrap overflow-y-auto"></div>
+            <div class="flex space-x-4 mt-4">
+                <button id="copy-report-btn" class="futuristic-btn flex-1 py-2 px-4 rounded-md text-sm">Copy to Clipboard</button>
+                <button id="close-report-btn" class="futuristic-btn flex-1 py-2 px-4 rounded-md bg-red-600/50 border-red-500 text-sm hover:bg-red-500">Close</button>
+            </div>
+        </div>
+    </div>
+    <div id="toast-container" class="fixed bottom-4 left-1/2 -translate-x-1/2 z-50">
+        <div id="toast-notification" class="toast-notification glass-panel p-4 rounded-lg flex items-center space-x-3 border-l-4">
+            <span id="toast-icon"></span>
+            <p id="toast-message" class="font-semibold"></p>
+        </div>
+    </div>
+
+    <script type="module">
+        // Firebase Imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // DOM Elements
+        const video = document.getElementById('video-feed'), canvas = document.getElementById('canvas-overlay'), ctx = canvas.getContext('2d'),
+              toggleBtn = document.getElementById('toggle-system-btn'), aiLog = document.getElementById('ai-agent-log'),
+              fpsDisplay = document.getElementById('telemetry-fps'), confidenceDisplay = document.getElementById('telemetry-confidence'),
+              modelDisplay = document.getElementById('telemetry-model'), conditionDisplay = document.getElementById('telemetry-condition'),
+              alertModal = document.getElementById('alert-modal'), feedbackModal = document.getElementById('feedback-modal'),
+              feedbackButtons = document.getElementById('feedback-buttons'), reportButtons = document.getElementById('report-buttons'),
+              feedbackYesBtn = document.getElementById('feedback-yes-btn'), feedbackNoBtn = document.getElementById('feedback-no-btn'),
+              generateReportBtn = document.getElementById('generate-report-btn'),
+              scanline = document.querySelector('.scanline'), videoContainer = document.getElementById('video-container'),
+              startPrompt = document.getElementById('start-prompt'), loadingSpinner = document.getElementById('loading-spinner'),
+              feedbackLog = document.getElementById('feedback-log'), userIdDisplay = document.getElementById('user-id-display'),
+              aiAssistantMessage = document.getElementById('ai-assistant-message'),
+              reportModal = document.getElementById('report-modal'), reportContent = document.getElementById('report-content'),
+              copyReportBtn = document.getElementById('copy-report-btn'), closeReportBtn = document.getElementById('close-report-btn'),
+              toastNotification = document.getElementById('toast-notification'), toastIcon = document.getElementById('toast-icon'), 
+              toastMessage = document.getElementById('toast-message'),
+              alertModalContent = document.getElementById('alert-modal-content'),
+              alertIconContainer = document.getElementById('alert-icon-container'), alertTitle = document.getElementById('alert-title'),
+              alertSubtitle = document.getElementById('alert-subtitle');
+
+        let isSystemActive = false, stream, animationFrameId, lastFrameTime = 0, frameCount = 0;
+        let db, auth, userId;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'rasta-pothole-dev';
+        
+        const gemini = {
+            API_KEY: "AIzaSyBAYsRMN3RQtLOCC9EspSgASOWfWqmEINs", 
+            API_URL: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent`,
+            async generate(prompt, systemInstruction) { const payload = { contents: [{ parts: [{ text: prompt }] }], systemInstruction: { parts: [{ text: systemInstruction }] } }; try { const response = await fetch(`${this.API_URL}?key=${this.API_KEY}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); if (!response.ok) { throw new Error(`API Error: ${response.status}`); } const result = await response.json(); return result.candidates?.[0]?.content?.parts?.[0]?.text || "No response from AI."; } catch (error) { console.error("Gemini API call failed:", error); return "Error contacting AI service."; } },
+            async getDrivingAdvice(hazard, condition) { const prompt = `A '${hazard.type}' was just detected with ${(hazard.confidence*100).toFixed(0)}% confidence. The current road condition is '${condition}'. Provide a very short, helpful, and calm safety tip for the driver.`; const systemInstruction = "You are an AI driving assistant named RASTA. Your responses are concise (1-2 sentences), professional, and focused on immediate driver safety."; const advice = await this.generate(prompt, systemInstruction); aiAssistantMessage.textContent = advice; },
+            async generateDamageReport(hazard, condition) { reportContent.textContent = "Generating report from AI model..."; reportModal.classList.remove('hidden'); const prompt = `Generate a formal road damage report based on the following data:\n- Hazard Type: ${hazard.type}\n- Detection Confidence: ${(hazard.confidence*100).toFixed(1)}%\n- Road Condition: ${condition}\n- Date: ${new Date().toLocaleDateString('en-IN')}\n- Time: ${new Date().toLocaleTimeString('en-IN')}\n- Location: [GPS Coordinates Placeholder]\n\nPlease structure it as a formal report ready for submission to a municipal authority. Include a subject line, a brief description of the hazard, its potential danger, and a call to action for inspection and repair.`; const systemInstruction = "You are a road safety logistics coordinator. You write clear, formal, and professional reports for civic authorities based on data provided."; const report = await this.generate(prompt, systemInstruction); reportContent.textContent = report; }
+        };
+
+        function logToAI(message, component = "System") { const p = document.createElement('p'); p.innerHTML = `<span class="text-sky-400">[${component}]</span> &gt; ${message}`; if (aiLog.children.length > 20) { aiLog.removeChild(aiLog.children[0]); } aiLog.appendChild(p); aiLog.scrollTop = aiLog.scrollHeight; }
+        
+        const ReinforcementLearner = { state: { negativeFeedbackCount: 0 }, config: { learningRate: 2, punishmentMultiplier: 2, memory: 5 }, update(isCorrect, lastHazard) { if(lastHazard.type !== 'pothole') return; if (isCorrect) { this.state.negativeFeedbackCount = 0; } else { this.state.negativeFeedbackCount++; const adjustmentFactor = this.state.negativeFeedbackCount > 1 ? this.config.punishmentMultiplier : 1; logToAI(`Negative feedback. Stricter model (x${adjustmentFactor}).`, "LearnerAgent"); visionModel.config.darkThreshold += this.config.learningRate * adjustmentFactor; visionModel.config.edgeThreshold += this.config.learningRate * 2 * adjustmentFactor; } if (this.state.negativeFeedbackCount > this.config.memory) { this.state.negativeFeedbackCount = 0; } logToAI(`Model recalibrated. D:${visionModel.config.darkThreshold} E:${visionModel.config.edgeThreshold}`, "VisionCore"); } };
+
+        const visionModel = { state: { lastEventTime: 0, lastRoadCondition: 'Unknown' }, config: { eventCooldown: 2500, analysisInterval: 250, roiY: 0.4, darkThreshold: 45, edgeThreshold: 70, minClusterSize: 50, confidenceThreshold: 0.72 }, lastAnalysisTime: 0, RoadConditionAnalyst: { run(imageData) { const { data, width, height } = imageData; let greenCount = 0, brownCount = 0, highlightCount = 0, darkPixelCount = 0; const totalPixels = width * height; for (let i = 0; i < data.length; i += 4) { const r = data[i], g = data[i + 1], b = data[i + 2]; const brightness = (r+g+b)/3; if (g > r && g > b + 10) greenCount++; if (r > g && r > b && Math.abs(g - b) < 30 && g > 50 && g < 150) brownCount++; if (brightness > 220) highlightCount++; if (brightness < 60) darkPixelCount++; } const greenRatio = greenCount / totalPixels, brownRatio = brownCount / totalPixels; const highlightRatio = highlightCount / totalPixels, darkRatio = darkPixelCount / totalPixels; if (greenRatio > 0.25 || brownRatio > 0.2) return 'Country Road'; if (highlightRatio > 0.015 && darkRatio > 0.35) return 'Wet Road'; return 'Dry Asphalt'; } }, TextureAnalyst: { run(cluster, grayData) { const { pixels } = cluster; let sum = 0, sumSq = 0; pixels.forEach(p => { const v = grayData.data[p]; sum += v; sumSq += v*v; }); const mean = sum / pixels.length; const variance = (sumSq / pixels.length) - mean * mean; return { score: Math.min(1, variance / 220) }; } }, ShapeAnalyst: { run(cluster) { const { box } = cluster; const aspectRatio = box.w / box.h; if (aspectRatio > 4.0) return { type: 'speedbreaker', score: Math.min(1, aspectRatio / 10) }; if (aspectRatio > 0.3 && aspectRatio < 2.8) return { type: 'pothole', score: 1 - Math.abs(1 - aspectRatio) }; return { type: 'noise', score: 0 }; } }, DepthSimulator: { run(cluster, grayData) { const { pixels, box } = cluster; const { data, width } = grayData; let topHalfSum = 0, bottomHalfSum = 0, topCount = 0, bottomCount = 0; const midY = box.y + box.h / 2; pixels.forEach(p => { const y = Math.floor(p / width); if (y < midY) { topHalfSum += data[p]; topCount++; } else { bottomHalfSum += data[p]; bottomCount++; } }); if (topCount === 0 || bottomCount === 0) return { score: 0 }; const topAvg = topHalfSum / topCount; const bottomAvg = bottomHalfSum / bottomCount; if (topAvg > bottomAvg + 4) return { type: 'pothole', score: Math.min(1, (topAvg - bottomAvg) / 25) }; if (bottomAvg > topAvg + 3) return { type: 'speedbreaker', score: Math.min(1, (bottomAvg - topAvg) / 20) }; return { score: 0 }; } }, predict(ctx, width, height) { const now = Date.now(); if (now - this.lastAnalysisTime < this.config.analysisInterval) return { hazard: null, roadCondition: null }; if (now - this.state.lastEventTime < this.config.eventCooldown) return { hazard: null, roadCondition: this.state.lastRoadCondition }; this.lastAnalysisTime = now; const fullImageData = ctx.getImageData(0, 0, width, height); const roadCondition = this.RoadConditionAnalyst.run(fullImageData); if(roadCondition !== this.state.lastRoadCondition) { triggerNotification(roadCondition); this.state.lastRoadCondition = roadCondition; logToAI(`Condition: ${roadCondition}`, "ConditionAnalyst"); } const roiY = Math.floor(height * this.config.roiY); const roiImageData = ctx.getImageData(0, roiY, width, height - roiY); const grayData = this.grayscale(roiImageData); const edgeData = this.sobel(grayData); const clusters = this.findClusters(grayData, edgeData); let bestHazard = null; if (clusters.length > 0) { logToAI(`Generated ${clusters.length} candidates. Verifying...`, "VisionCore"); const candidates = this.fuseConfidence(clusters, grayData); if (candidates.length > 0) { bestHazard = candidates.sort((a,b) => b.confidence - a.confidence)[0]; logToAI(`Confirmed ${bestHazard.type}. Confidence: ${(bestHazard.confidence*100).toFixed(1)}%`, "Classifier"); this.state.lastEventTime = now; bestHazard.box.y += roiY; } } return { hazard: bestHazard, roadCondition }; }, fuseConfidence(clusters, grayData) { const candidates = []; const weights = { pothole: { shape: 0.15, depth: 0.5, texture: 0.35 }, speedbreaker: { shape: 0.6, depth: 0.4, texture: 0.0 } }; for (const cluster of clusters) { const shapeResult = this.ShapeAnalyst.run(cluster); const depthResult = this.DepthSimulator.run(cluster, grayData); const textureResult = this.TextureAnalyst.run(cluster, grayData); let potholeConfidence = 0; let speedbreakerConfidence = 0; if (shapeResult.type === 'pothole') potholeConfidence += shapeResult.score * weights.pothole.shape; if (depthResult.type === 'pothole') potholeConfidence += depthResult.score * weights.pothole.depth; potholeConfidence += textureResult.score * weights.pothole.texture; if (shapeResult.type === 'speedbreaker') speedbreakerConfidence += shapeResult.score * weights.speedbreaker.shape; if (depthResult.type === 'speedbreaker') speedbreakerConfidence += depthResult.score * weights.speedbreaker.depth; if (depthResult.score > 0.4 && textureResult.score > 0.4) { logToAI(`Synergy bonus applied (depth+texture).`, "Classifier"); potholeConfidence += 0.2; } if (textureResult.score > 0.25) { if(speedbreakerConfidence > 0) logToAI(`High texture (${textureResult.score.toFixed(2)}) penalizing speedbreaker.`, "Classifier"); speedbreakerConfidence *= (1 - textureResult.score); } if (potholeConfidence > this.config.confidenceThreshold || speedbreakerConfidence > this.config.confidenceThreshold) { if (potholeConfidence > speedbreakerConfidence) { cluster.confidence = potholeConfidence; cluster.type = 'pothole'; } else { cluster.confidence = speedbreakerConfidence; cluster.type = 'speedbreaker'; } candidates.push(cluster); } } return candidates; }, grayscale: (imageData) => { const { data, width, height } = imageData; const gray = new Uint8ClampedArray(width * height); for (let i = 0; i < data.length; i += 4) { gray[i / 4] = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114; } return { data: gray, width, height }; }, sobel: (grayData) => { const { data, width, height } = grayData; const output = new Float32Array(width * height); const Gx = [-1, 0, 1, -2, 0, 2, -1, 0, 1]; const Gy = [-1, -2, -1, 0, 0, 0, 1, 2, 1]; for (let y = 1; y < height - 1; y++) { for (let x = 1; x < width - 1; x++) { let sumX = 0, sumY = 0; for (let ky = -1; ky <= 1; ky++) { for (let kx = -1; kx <= 1; kx++) { const val = data[(y + ky) * width + (x + kx)]; sumX += val * Gx[(ky + 1) * 3 + (kx + 1)]; sumY += val * Gy[(ky + 1) * 3 + (kx + 1)]; } } output[y * width + x] = Math.sqrt(sumX * sumX + sumY * sumY); } } return { data: output, width, height }; }, findClusters: function(grayData, edgeData) { const { data: gray, width, height } = grayData; const { data: edges } = edgeData; const visited = new Uint8Array(width * height); const clusters = []; for (let i = 0; i < gray.length; i++) { if (!visited[i] && gray[i] < this.config.darkThreshold && edges[i] > this.config.edgeThreshold) { const cluster = []; const stack = [i]; visited[i] = 1; let minX = width, minY = height, maxX = 0, maxY = 0; while (stack.length > 0) { const pixelIndex = stack.pop(); cluster.push(pixelIndex); const x = pixelIndex % width; const y = Math.floor(pixelIndex / width); if(x < minX) minX = x; if(x > maxX) maxX = x; if(y < minY) minY = y; if(y > maxY) maxY = y; for(let dy=-1; dy<=1; dy++) { for(let dx=-1; dx<=1; dx++) { if(dx===0 && dy===0) continue; const nx = x + dx, ny = y + dy; const ni = ny * width + nx; if (nx >= 0 && nx < width && ny >= 0 && ny < height && !visited[ni] && gray[ni] < this.config.darkThreshold && edges[ni] > this.config.edgeThreshold) { visited[ni] = 1; stack.push(ni); } } } } if (cluster.length > this.config.minClusterSize) { clusters.push({ pixels: cluster, box: { x: minX, y: minY, w: maxX-minX, h: maxY-minY } }); } } } return clusters; } };
+        
+        let toastTimeout;
+        function triggerNotification(type) { const styles = { 'Wet Road': { icon: '💧', color: 'border-blue-400', text: 'Wet Road Detected' }, 'Country Road': { icon: '🌳', color: 'border-yellow-500', text: 'Country Road Environment' }, 'Dry Asphalt': { icon: '☀️', color: 'border-green-500', text: 'Road Condition: Clear' }, }; const style = styles[type]; if (!style) return; toastIcon.textContent = style.icon; toastMessage.textContent = style.text; toastNotification.className = `toast-notification glass-panel p-4 rounded-lg flex items-center space-x-3 border-l-4 ${style.color}`; toastNotification.classList.add('show'); clearTimeout(toastTimeout); toastTimeout = setTimeout(() => { toastNotification.classList.remove('show'); }, 3000); }
+        try { const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}'); const app = initializeApp(firebaseConfig); db = getFirestore(app); auth = getAuth(app); onAuthStateChanged(auth, async (user) => { if (!user) { try { if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) { await signInWithCustomToken(auth, __initial_auth_token); } else { await signInAnonymously(auth); } } catch (error) { console.error("Auth Error:", error); logToAI("Auth failed. Offline mode.", "System"); } } else { userId = user.uid; userIdDisplay.textContent = userId; logToAI("Authentication successful.", "System"); setupFeedbackListener(); } }); } catch(e) { console.error("Firebase init failed:", e); logToAI("Firebase failed. Calibration disabled.", "System"); }
+        async function startSystem() { startPrompt.classList.add('hidden'); loadingSpinner.classList.remove('hidden'); logToAI("Initializing camera system...", "System"); try { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }); video.srcObject = stream; video.onloadedmetadata = () => { video.play(); canvas.width = video.videoWidth; canvas.height = video.videoHeight; isSystemActive = true; toggleBtn.textContent = 'DEACTIVATE SYSTEM'; toggleBtn.classList.add('active'); logToAI("System Activated. Live feed established.", "System"); modelDisplay.textContent = "ACTIVE"; modelDisplay.classList.replace('text-green-400', 'text-sky-400'); conditionDisplay.textContent = "ANALYZING"; scanline.style.display = 'block'; loadingSpinner.classList.add('hidden'); videoContainer.classList.remove('hidden'); lastFrameTime = performance.now(); gameLoop(); }; } catch (err) { console.error("Camera Error:", err); logToAI("ERROR: Failed to access camera.", "System"); loadingSpinner.classList.add('hidden'); startPrompt.classList.remove('hidden'); } }
+        function stopSystem() { if (stream) stream.getTracks().forEach(track => track.stop()); isSystemActive = false; cancelAnimationFrame(animationFrameId); toggleBtn.textContent = 'ACTIVATE SYSTEM'; toggleBtn.classList.remove('active'); logToAI("System Deactivated.", "System"); modelDisplay.textContent = "INACTIVE"; modelDisplay.classList.replace('text-sky-400', 'text-green-400'); fpsDisplay.textContent = "--"; confidenceDisplay.textContent = "--"; conditionDisplay.textContent = "--"; scanline.style.display = 'none'; videoContainer.classList.add('hidden'); startPrompt.classList.remove('hidden'); ctx.clearRect(0, 0, canvas.width, canvas.height); }
+        function toggleSystem() { isSystemActive ? stopSystem() : startSystem(); }
+        
+        function showAlert(type) { const icons = { pothole: '<svg xmlns="http://www.w3.org/2000/svg" class="h-20 w-20 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>', speedbreaker: '<svg xmlns="http://www.w3.org/2000/svg" class="h-20 w-20 text-yellow-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L3.707 10.707a1 1 0 01-1.414-1.414l6-6z" clip-rule="evenodd" /></svg>' }; const titles = { pothole: 'POTHOLE DETECTED', speedbreaker: 'SPEEDBREAKER AHEAD' }; const subtitles = { pothole: 'Proceed with caution!', speedbreaker: 'Reduce speed.' }; const colors = { pothole: '#ef4444', speedbreaker: '#eab308' }; alertModalContent.style.setProperty('--pulse-color', colors[type]); alertIconContainer.innerHTML = icons[type]; alertTitle.textContent = titles[type]; alertTitle.className = `text-3xl font-bold text-${type === 'pothole' ? 'red' : 'yellow'}-400`; alertSubtitle.textContent = subtitles[type]; alertModalContent.className = `alert-modal-base glass-panel p-8 rounded-2xl border-2 border-${type === 'pothole' ? 'red' : 'yellow'}-500 text-center`; alertModal.classList.remove('hidden'); setTimeout(() => alertModal.classList.add('hidden'), 2500); }
+        function drawDetection(detection) { if (!detection || !detection.box) return; const { x, y, w, h, type } = detection; const colors = { pothole: '#ef4444', speedbreaker: '#eab308'}; const text = `${type.toUpperCase()} | ${(detection.confidence * 100).toFixed(1)}%`; ctx.strokeStyle = colors[type]; ctx.lineWidth = 4; ctx.shadowColor = colors[type]; ctx.shadowBlur = 15; ctx.strokeRect(x, y, w, h); ctx.font = 'bold 18px Inter'; ctx.fillStyle = colors[type]; ctx.fillText(text, x, y > 20 ? y - 10 : y + h + 20); ctx.shadowBlur = 0; }
+
+        let lastHazard = null;
+
+        function gameLoop(timestamp) {
+            if (!isSystemActive) return;
+            frameCount++;
+            const delta = timestamp - lastFrameTime;
+            if (delta >= 1000) { fpsDisplay.textContent = ((frameCount * 1000) / delta).toFixed(1); frameCount = 0; lastFrameTime = timestamp; }
+            
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const { hazard, roadCondition } = visionModel.predict(ctx, canvas.width, canvas.height);
+            
+            if (roadCondition) {
+                conditionDisplay.textContent = roadCondition;
+                conditionDisplay.classList.toggle('text-yellow-400', roadCondition === 'Country Road');
+                conditionDisplay.classList.toggle('text-blue-400', roadCondition === 'Wet Road');
+                conditionDisplay.classList.toggle('text-green-400', roadCondition === 'Dry Asphalt');
+            }
+
+            if (hazard) {
+                if (lastHazard?.type !== hazard.type) { // only trigger for new, different hazards
+                    gemini.getDrivingAdvice(hazard, visionModel.state.lastRoadCondition);
+                }
+                lastHazard = hazard;
+                drawDetection(hazard);
+                showAlert(hazard.type);
+                confidenceDisplay.textContent = `${(hazard.confidence * 100).toFixed(1)}%`;
+                if (hazard.type === 'pothole') {
+                    feedbackButtons.classList.remove('hidden');
+                    reportButtons.classList.add('hidden');
+                    feedbackModal.classList.remove('hidden');
+                }
+            } else {
+                confidenceDisplay.textContent = "0.0%";
+            }
+            
+            animationFrameId = requestAnimationFrame(gameLoop);
+        }
+        
+        async function handleFeedback(isCorrect) {
+            if (!lastHazard) return;
+            if (db) {
+                try {
+                    await addDoc(collection(db, `/artifacts/${appId}/public/data/rasta_feedback`), {
+                        userId: userId || 'anonymous', isCorrect, timestamp: new Date(), detection: { confidence: lastHazard.confidence, type: lastHazard.type }
+                    });
+                    logToAI(`Calibration data logged.`, "System");
+                } catch (error) { console.error("Firestore Error:", error); logToAI("ERROR: Failed to log calibration.", "System"); }
+            }
+            
+            if (isCorrect) {
+                feedbackButtons.classList.add('hidden');
+                reportButtons.classList.remove('hidden');
+            } else {
+                feedbackModal.classList.add('hidden');
+            }
+            ReinforcementLearner.update(isCorrect, lastHazard);
+            if (!isCorrect) { lastHazard = null; }
+        }
+
+        function setupFeedbackListener() { if (!db) return; const q = query(collection(db, `/artifacts/${appId}/public/data/rasta_feedback`), limit(10)); onSnapshot(q, (querySnapshot) => { feedbackLog.innerHTML = ''; const feedbacks = []; querySnapshot.forEach((doc) => feedbacks.push(doc.data())); feedbacks.sort((a, b) => b.timestamp.toMillis() - a.timestamp.toMillis()); if (feedbacks.length === 0) { feedbackLog.innerHTML = '<p class="text-slate-500">No calibration data yet.</p>'; return; } feedbacks.forEach(data => { const p = document.createElement('p'); const status = data.isCorrect ? '<span class="text-green-400">ACCURATE</span>' : '<span class="text-red-400">INACCURATE</span>'; p.innerHTML = `${data.timestamp.toDate().toLocaleTimeString()} - ${data.detection.type || 'Pothole'} cal: ${status}`; feedbackLog.appendChild(p); }); }, (error) => { console.error("Feedback listener error:", error); feedbackLog.innerHTML = '<p class="text-red-500">Error loading log.</p>'; }); }
+
+        // Event Listeners
+        toggleBtn.addEventListener('click', toggleSystem);
+        feedbackYesBtn.addEventListener('click', () => handleFeedback(true));
+        feedbackNoBtn.addEventListener('click', () => handleFeedback(false));
+        generateReportBtn.addEventListener('click', () => {
+            if (lastHazard) gemini.generateDamageReport(lastHazard, visionModel.state.lastRoadCondition);
+            feedbackModal.classList.add('hidden');
+        });
+        closeReportBtn.addEventListener('click', () => reportModal.classList.add('hidden'));
+        copyReportBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(reportContent.textContent)
+                .then(() => {
+                    copyReportBtn.textContent = "Copied!";
+                    setTimeout(() => { copyReportBtn.textContent = "Copy to Clipboard"; }, 2000);
+                });
+        });
+
+    </script>
+</body>
+</html>
+
